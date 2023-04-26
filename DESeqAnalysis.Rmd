@@ -1,0 +1,190 @@
+---
+title: "R_Project_Analysis"
+author: "Beatriz Pereira"
+date: "2023-04-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# upload the necessary packages: 
+```{r}
+library(DESeq2) # differential gene expression analysis packet. 
+library(dplyr) 
+library(radiant)
+library(tidyverse)
+library(RColorBrewer)
+library(pheatmap)
+library(apeglm)
+```
+
+# load the data: 
+```{r}
+countdata <- read.csv("GSE184723_miRNA_read-counts.csv.gz", header=T, row.names = 1)
+```
+
+# inspect the data: 
+```{r}
+type_countdata <- typeof(countdata) # we have a list
+length_countdata <- length(countdata) #integer value
+dim_countdata <- dim(countdata) # 1836 rows (our genes)
+str_countdata <- str(countdata) # we have a data framem with 1836 obeservations and 16 variables. The gene names are characters, and the count data itself are integers. We have several biological replicates. 
+```
+
+# inspect RNA-seq count distribution: 
+```{r}
+ggplot(countdata) +
+   geom_histogram(aes(x = AGAT_d.d10_4824), stat = "bin", bins = 200) + 
+   xlim(-5, 500)  +
+   xlab("Raw expression counts") +
+   ylab("Number of genes")
+
+# from these plots, we can see that there is a low number of counts associated with a large proportion genes, since there are so many genes with 0 expression. 
+
+#Because this is count data, it should fit a negative binomial. Below, we are plotting the mean versus the variance of the data, for the AGAT deficient mice biological replicates [1-5]. 
+
+mean_counts <- apply(countdata[, 1:5], 1, mean)
+variance_counts <- apply(countdata[, 1:5], 1, var)
+df <- data.frame(mean_counts, variance_counts)
+
+ggplot(df) +
+        geom_point(aes(x=mean_counts, y=variance_counts)) + 
+        geom_line(aes(x=mean_counts, y=mean_counts, color="red")) +
+        scale_y_log10() +
+        scale_x_log10()
+# this results in a negative binomial, so we can move onto our next steps. 
+```
+
+# making the coldata for DeSeq2
+```{r}
+# making the matrix - there are 15 total samples. 
+coldata = matrix(c(1:30), ncol = 2, byrow = TRUE) 
+
+# the condition is the genotype, so that is what we will want in the DeSeq object.
+colnames(coldata) = c('sample','condition')
+
+# make it a dataframe for easier management. 
+coldata <- as.data.frame(coldata)
+
+# assigning the rownames for coldata - they should all match the column names in countdata. 
+rownames(coldata) <- c("AGAT_d.d10_4824", "AGAT_d.d_6_4619", "AGAT_d.d_7_4752",
+                       "AGAT_d.d_8_4783", "AGAT_d.d_9_4822", "AGAT_WT_1_4617",
+                       "AGAT_WT_2_4620", "AGAT_WT_3_4654", "AGAT_WT_4_4679",
+                       "AGAT_WT_5_4692", "AGAT_d.d.HA_11_4661", "AGAT_d.d.HA_12_4674",
+                       "AGAT_d.d.HA_13_4694", "AGAT_d.d.HA_14_4750",
+                       "AGAT_d.d.HA_15_4751")
+# adding in the genotypes - what the sample ID's correspond to.
+coldata$sample = c('AGAT_deficient_mouse_10','AGAT_deficient_mouse_6',          'AGAT_deficient_mouse_7','AGAT_deficient_mouse_8',
+'AGAT_deficient_mouse_9', 'AGAT_wildtype_mouse_1',
+'AGAT_wildtype_mouse_2','AGAT_wildtype_mouse_3',
+'AGAT_wildtype_mouse_4', 'AGAT_wildtype_mouse_5',
+'AGAT_defficient_plus_homoarginine_mouse_11',
+'AGAT_defficient_plus_homoarginine_mouse_12',
+'AGAT_defficient_plus_homoarginine_mouse_13',
+'AGAT_defficient_plus_homoarginine_mouse_14',
+'AGAT_defficient_plus_homoarginine_mouse_15')
+
+# adding the biological replicate labels so we can group them later in the analysis: 
+coldata$condition = c('Defficient','Defficient','Defficient','Defficient','Defficient','Wildtype','Wildtype','Wildtype','Wildtype','Wildtype', 'Rescue','Rescue','Rescue','Rescue','Rescue')
+
+# check your dataframe. 
+View(coldata)
+```
+
+# Making the DESeq object. 
+```{r}
+# make genotype and condition data a factor
+coldata$sample <- factor(coldata$sample)
+coldata$condition <- factor(coldata$condition)
+
+# check that the order of column data (countdata) is consistent with the order of row data (coldata). DeSeq2 will not match these up for you and the analysis will be incorrect. 
+rownames(coldata)
+colnames(countdata) #samples order is consistent. 
+all(rownames(coldata) %in% colnames(countdata)) # making sure that all samples in coldata are in countdata and vise versa. 
+all(rownames(coldata) == colnames(countdata)) # rows and columns completely match. 
+
+# making the DESeq object. 
+dds <- DESeqDataSetFromMatrix(countData = countdata,
+                              colData = coldata,
+                              design = ~ condition)
+# check on your DESeq object. 
+dds
+View(counts(dds))
+```
+
+# Pre-filtering low-expression miRNAs. Here, we are removing any count lower than 10, and keeping those in dds that are greater or equal to 10. 
+```{r}
+keep <- rowSums(counts(dds)) >= 10 
+dds <- dds[keep,]
+```
+
+# Quality assessment: 
+```{r}
+# Transform counts for data visualization
+rld <- rlog(dds, blind=TRUE) 
+## blind = TRUE : transformation that is not biased to sample condition. rlog : returns a DESeqTransform object. 
+
+# Plot PCA (principal component analysis)
+plotPCA(rld, intgroup="condition") # this uses the top 500 most varibale genes. Biological samples should have some similarity, but considering that these are not clones mice (just from the same litter), there will be differences. 
+
+# Hierarchial clustering: 
+## Extract the rlog matrix from the object
+rld_mat <- assay(rld)
+## Compute pairwise correlation values
+rld_cor <- cor(rld_mat)
+## Plot heatmap
+pheatmap(rld_cor) # our correlations range from 0.995 to 0.999. There don't seem to be extreme outliers. 
+```
+
+# Set control condition: 
+```{r}
+dds$condition <- factor(dds$condition, levels = c("Defficient","Wildtype","Rescue"))
+dds$condition <- relevel(dds$condition, ref = "Wildtype")
+```
+
+# DGE Analysis
+```{r}
+dds <- DESeq(dds) #this step automatically normalizes the data using median of ratios. 
+# Dificient vs. Wildtype
+res <- results(dds, contrast=c("condition","Defficient","Wildtype"))
+# Applying False Discovery Rate. 
+res$p_val_fdr <- p.adjust(res$pvalue, method = "fdr")
+# make a tibble
+res_tibble <- res %>%
+  data.frame() %>%
+  rownames_to_column(var="gene") %>% 
+  as_tibble()
+# get rid of FDR adjusted p-values below .05: 
+pfdr_cutoff <- 0.05
+res_tibble <- dplyr::filter(res_tibble, p_val_fdr < pfdr_cutoff) %>%
+  dplyr::arrange(p_val_fdr)
+res_tibble
+write.csv(as.data.frame(res_tibble), 
+          file="deficient_control_results.csv")
+# different results than supplementary table provided by research group. 
+
+```
+# Log fold change shrinkage for visualization and ranking: 
+```{r}
+contrast <- c("condition", "Defficient", "Wildtype")
+
+res_table_unshrunken <- results(dds, contrast=contrast, alpha = 0.05)
+
+res_table <- lfcShrink(dds, contrast=contrast, res=res_table_unshrunken)
+resultsNames(dds)
+resLFC <- lfcShrink(dds, coef = 1, type = "ashr")
+```
+
+# Recreating the heatmap - not complete:
+```{r}
+library("pheatmap")
+select <- order(rowMeans(counts(dds,normalized=TRUE)),
+                decreasing=TRUE)[1:20]
+df <- as.data.frame(colData(dds)[,"condition"])
+ntd <- normTransform(dds)
+pheatmap(assay(ntd)[select,], cluster_rows=FALSE, show_rownames=FALSE,
+         cluster_cols=FALSE, annotation_col=df)
+```
+
