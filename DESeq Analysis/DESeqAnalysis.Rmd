@@ -160,7 +160,7 @@ write.csv(as.data.frame(res_tibble),
 # different results than supplementary table provided by research group. 
 ```
 
-# Recreating the heatmap - not complete:
+# Recreating the heatmap:
 ```{r}
 library(ComplexHeatmap)
 
