@@ -203,3 +203,13 @@ heatmap.2(mat.z, dendrogram = "column", key = TRUE,
           margins=c(5,10))
 ```
 
+# Attempting to get their version (no FDR filtering): 
+```{r}
+head <- head(res[order(res$padj),], 20)
+head <- as.data.frame(head)
+mat.z <- t(apply(mat, 1, scale))
+heatmap.2(mat.z, dendrogram = "column", key = TRUE,
+          col = mycol, density.info="none", trace = "none",
+          margins=c(5,10))
+```
+
