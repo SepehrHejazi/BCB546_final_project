@@ -196,6 +196,7 @@ colnames(mat.z) <- c('AGAT-/-','AGAT-/-','AGAT-/-','AGAT-/-','AGAT-/-',
 'wt','wt','wt','wt','wt')
 
 # make out heatmap: 
+library(gplots)
 mycol <- colorpanel(1000, low = "yellow", high = "red")
 
 heatmap.2(mat.z, dendrogram = "column", key = TRUE,
@@ -205,9 +206,12 @@ heatmap.2(mat.z, dendrogram = "column", key = TRUE,
 
 # Attempting to get their version (no FDR filtering): 
 ```{r}
-head <- head(res[order(res$padj),], 20)
+head <- head(res[order(res$padj),], 35)
 head <- as.data.frame(head)
+mat <- counts(dds, normalized = TRUE)[rownames(head),]
 mat.z <- t(apply(mat, 1, scale))
+colnames(mat.z) <- c('AGAT-/-','AGAT-/-','AGAT-/-','AGAT-/-','AGAT-/-',
+'wt','wt','wt','wt','wt')
 heatmap.2(mat.z, dendrogram = "column", key = TRUE,
           col = mycol, density.info="none", trace = "none",
           margins=c(5,10))
