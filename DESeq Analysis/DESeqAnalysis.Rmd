@@ -196,7 +196,10 @@ colnames(mat.z) <- c('AGAT-/-','AGAT-/-','AGAT-/-','AGAT-/-','AGAT-/-',
 'wt','wt','wt','wt','wt')
 
 # make out heatmap: 
-heatmap.2(mat.z, dendrogram = "column", key = TRUE, density.info="none", trace = "none",
+mycol <- colorpanel(1000, low = "yellow", high = "red")
+
+heatmap.2(mat.z, dendrogram = "column", key = TRUE,
+          col = mycol, density.info="none", trace = "none",
           margins=c(5,10))
 ```
 
