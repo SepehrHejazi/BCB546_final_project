@@ -20,7 +20,7 @@ library(pheatmap)
 library(apeglm)
 ```
 
-# load the data: 
+# load the data, row.names = 1 gets rid of 'x' header and makes miRNAs the row names: 
 ```{r}
 countdata <- read.csv("GSE184723_miRNA_read-counts.csv.gz", header=T, row.names = 1)
 ```
@@ -59,11 +59,17 @@ ggplot(df) +
 
 # making the coldata for DeSeq2
 ```{r}
+# subset desired columns for analysis: 
+countdata <- subset(countdata, select = c("AGAT_d.d10_4824", "AGAT_d.d_6_4619", "AGAT_d.d_7_4752",
+                       "AGAT_d.d_8_4783", "AGAT_d.d_9_4822", "AGAT_WT_1_4617",
+                       "AGAT_WT_2_4620", "AGAT_WT_3_4654", "AGAT_WT_4_4679",
+                       "AGAT_WT_5_4692"))
+
 # making the matrix - there are 15 total samples. 
-coldata = matrix(c(1:30), ncol = 2, byrow = TRUE) 
+coldata = matrix(c(1:10), ncol = 1, byrow = TRUE) 
 
 # the condition is the genotype, so that is what we will want in the DeSeq object.
-colnames(coldata) = c('sample','condition')
+colnames(coldata) = "condition"
 
 # make it a dataframe for easier management. 
 coldata <- as.data.frame(coldata)
@@ -72,22 +78,10 @@ coldata <- as.data.frame(coldata)
 rownames(coldata) <- c("AGAT_d.d10_4824", "AGAT_d.d_6_4619", "AGAT_d.d_7_4752",
                        "AGAT_d.d_8_4783", "AGAT_d.d_9_4822", "AGAT_WT_1_4617",
                        "AGAT_WT_2_4620", "AGAT_WT_3_4654", "AGAT_WT_4_4679",
-                       "AGAT_WT_5_4692", "AGAT_d.d.HA_11_4661", "AGAT_d.d.HA_12_4674",
-                       "AGAT_d.d.HA_13_4694", "AGAT_d.d.HA_14_4750",
-                       "AGAT_d.d.HA_15_4751")
-# adding in the genotypes - what the sample ID's correspond to.
-coldata$sample = c('AGAT_deficient_mouse_10','AGAT_deficient_mouse_6',          'AGAT_deficient_mouse_7','AGAT_deficient_mouse_8',
-'AGAT_deficient_mouse_9', 'AGAT_wildtype_mouse_1',
-'AGAT_wildtype_mouse_2','AGAT_wildtype_mouse_3',
-'AGAT_wildtype_mouse_4', 'AGAT_wildtype_mouse_5',
-'AGAT_defficient_plus_homoarginine_mouse_11',
-'AGAT_defficient_plus_homoarginine_mouse_12',
-'AGAT_defficient_plus_homoarginine_mouse_13',
-'AGAT_defficient_plus_homoarginine_mouse_14',
-'AGAT_defficient_plus_homoarginine_mouse_15')
+                       "AGAT_WT_5_4692")
 
-# adding the biological replicate labels so we can group them later in the analysis: 
-coldata$condition = c('Defficient','Defficient','Defficient','Defficient','Defficient','Wildtype','Wildtype','Wildtype','Wildtype','Wildtype', 'Rescue','Rescue','Rescue','Rescue','Rescue')
+# adding in the genotypes - what the sample ID's correspond to.
+coldata$condition = c('Deficient','Deficient','Deficient','Deficient','Deficient','Wildtype','Wildtype','Wildtype','Wildtype','Wildtype')
 
 # check your dataframe. 
 View(coldata)
@@ -95,9 +89,8 @@ View(coldata)
 
 # Making the DESeq object. 
 ```{r}
-# make genotype and condition data a factor
-coldata$sample <- factor(coldata$sample)
-coldata$condition <- factor(coldata$condition)
+# make condition a factor. 
+coldata$condition <- factor(coldata$condition) ## --- maybe delete --- 
 
 # check that the order of column data (countdata) is consistent with the order of row data (coldata). DeSeq2 will not match these up for you and the analysis will be incorrect. 
 rownames(coldata)
@@ -127,7 +120,7 @@ rld <- rlog(dds, blind=TRUE)
 ## blind = TRUE : transformation that is not biased to sample condition. rlog : returns a DESeqTransform object. 
 
 # Plot PCA (principal component analysis)
-plotPCA(rld, intgroup="condition") # this uses the top 500 most varibale genes. Biological samples should have some similarity, but considering that these are not clones mice (just from the same litter), there will be differences. 
+plotPCA(rld, intgroup="condition") # this uses the top 500 most varibale genes. Biological samples should have similarities in clusters. 
 
 # Hierarchial clustering: 
 ## Extract the rlog matrix from the object
@@ -140,7 +133,7 @@ pheatmap(rld_cor) # our correlations range from 0.995 to 0.999. There don't seem
 
 # Set control condition: 
 ```{r}
-dds$condition <- factor(dds$condition, levels = c("Defficient","Wildtype","Rescue"))
+dds$condition <- factor(dds$condition, levels = c("Deficient","Wildtype"))
 dds$condition <- relevel(dds$condition, ref = "Wildtype")
 ```
 
@@ -148,7 +141,7 @@ dds$condition <- relevel(dds$condition, ref = "Wildtype")
 ```{r}
 dds <- DESeq(dds) #this step automatically normalizes the data using median of ratios. 
 # Dificient vs. Wildtype
-res <- results(dds, contrast=c("condition","Defficient","Wildtype"))
+res <- results(dds, contrast=c("condition","Deficient","Wildtype"))
 # Applying False Discovery Rate. 
 res$p_val_fdr <- p.adjust(res$pvalue, method = "fdr")
 # make a tibble
@@ -159,32 +152,51 @@ res_tibble <- res %>%
 # get rid of FDR adjusted p-values below .05: 
 pfdr_cutoff <- 0.05
 res_tibble <- dplyr::filter(res_tibble, p_val_fdr < pfdr_cutoff) %>%
-  dplyr::arrange(p_val_fdr)
+  dplyr::arrange(desc(log2FoldChange), 
+          desc(p_val_fdr))
 res_tibble
 write.csv(as.data.frame(res_tibble), 
           file="deficient_control_results.csv")
 # different results than supplementary table provided by research group. 
-
-```
-# Log fold change shrinkage for visualization and ranking: 
-```{r}
-contrast <- c("condition", "Defficient", "Wildtype")
-
-res_table_unshrunken <- results(dds, contrast=contrast, alpha = 0.05)
-
-res_table <- lfcShrink(dds, contrast=contrast, res=res_table_unshrunken)
-resultsNames(dds)
-resLFC <- lfcShrink(dds, coef = 1, type = "ashr")
 ```
 
 # Recreating the heatmap - not complete:
 ```{r}
-library("pheatmap")
-select <- order(rowMeans(counts(dds,normalized=TRUE)),
-                decreasing=TRUE)[1:20]
-df <- as.data.frame(colData(dds)[,"condition"])
-ntd <- normTransform(dds)
-pheatmap(assay(ntd)[select,], cluster_rows=FALSE, show_rownames=FALSE,
-         cluster_cols=FALSE, annotation_col=df)
+library(ComplexHeatmap)
+
+normalized_dds <- varianceStabilizingTransformation(dds, blind = FALSE)
+rlog_out <- rlog(dds, blind = FALSE) # transformed with rlog and varianceStabilizingTransformation - rlog looked a little better. 
+
+# quality check step (choosing which transformation): 
+plotPCA(normalized_dds, intgroup = "condition")
+plotPCA(rlog_out, intgroup = "condition") # use this one. 
+
+# build a results table comparing miRNA expression between AGAT deficient and wildtype conditions: 
+res_heatmap <- results(dds, contrast = c("condition","Deficient","Wildtype"))
+
+# apply the FDR correction (multiple testing)
+res_heatmap$p_val_fdr <- p.adjust(res_heatmap$pvalue, method = "fdr")
+
+# get rid of na's in order to plot: 
+sigs <- na.omit(res_heatmap)
+
+# subset significant results, based on FDR: 
+sigs <- sigs[sigs$p_val_fdr < 0.05,]
+
+# make sigs into a dataframe: 
+sigs <- as.data.frame(sigs)
+
+mat <- counts(dds, normalized = TRUE)[rownames(sigs),]
+
+# z scale: 
+mat.z <- t(apply(mat, 1, scale))
+
+# add desired column names: 
+colnames(mat.z) <- c('AGAT-/-','AGAT-/-','AGAT-/-','AGAT-/-','AGAT-/-',
+'wt','wt','wt','wt','wt')
+
+# make out heatmap: 
+heatmap.2(mat.z, dendrogram = "column", key = TRUE, density.info="none", trace = "none",
+          margins=c(5,10))
 ```
 
