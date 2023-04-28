@@ -151,6 +151,4 @@ e <- which(logCPM2$miRNA %in% eBayes_KO.vs.WT.topgenes) #returns the position wh
 #The figure shows a heatmap of logCPM values for top 33 genes DE in wild-type vs. AGAT-knockout using the eBayes method
 mycol <- colorpanel(1000, low = "yellow", high = "red") #low to high miRNA expresion is represented by a change of color from yellow to red 
 heatmap.2(logCPM[e,], scale = "row", labRow = logCPM2$miRNA[e], labCol = group, col = mycol, trace = "none", density.info = "none", dendrogram = "column", key = TRUE, symkey = FALSE, keysize = 1.5)
-
-#issues: I don't think the "labRow" is correct for either heatmap because the miRNAs produced are different 
 ```
