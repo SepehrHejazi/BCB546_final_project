@@ -72,6 +72,7 @@ table(rowSums(dge$counts==0)==10) #742 miRNAs have zero counts across all 10 sam
 keep <- filterByExpr(dge, group=group) #remove rows that consistently have zero or very low counts
 #By default, the filterByExpr function keeps genes with about 10 read counts or more in a minimum number of samples
 #Since the paper seems to have filtered from 1836 miRNAs to 953 miRNAs, some parameters could be changed as to not filter out all genes that do not meet the standard (i,e., min.count = 10, total.min.count = 15, large.n = 10, min.prop = 0.7)
+#Previous study had pre-processed the data using R/Bioconductor package xps, calculated the detection above background (DABG), and kept genes with a DABG P-value<0.01 in at least two samples per group
 dge <- dge[keep,,keep.lib.sizes=FALSE]
 dim(dge) #data was filtered from 1836 miRNAs to 226 miRNAs
 
