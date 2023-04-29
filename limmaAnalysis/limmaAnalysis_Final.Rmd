@@ -84,6 +84,20 @@ keep <- filterByExpr(dge, group=group) #remove rows that consistently have zero 
 #Since the paper seems to have filtered from 1836 miRNAs to 953 miRNAs, some parameters could be changed as to not filter out all genes that do not meet the standard (i,e., min.count = 10, total.min.count = 15, large.n = 10, min.prop = 0.7)
 dge <- dge[keep,,keep.lib.sizes=FALSE]
 dim(dge) #data was filtered from 1836 miRNAs to 226 miRNAs
+lcpm.f <- cpm(dge, log=TRUE) #log2-CPM for filtered data 
+
+#The figure shows the density of logCPM values for pre-filtered and post-filtered count-data
+library(RColorBrewer)
+nsamples <- ncol(dge)
+col <- brewer.pal(nsamples, "Paired")
+lcpm.cutoff <- log2(10/M + 2/L) #defines the logCPM threshold
+par(mar = c(5, 5, 2, 2))
+plotDensities(lcpm, col=col, main="", legend = "topright")
+title(main="A.Density of logCPM for pre-filtered count-data")
+abline(v=lcpm.cutoff, lty=3)
+plotDensities(lcpm.f, col=col, main="", legend = "topright")
+title(main="B. Density of logCPM for filtered count-data")
+abline(v=lcpm.cutoff, lty=3)
 
 #Normalizing gene distributions 
 dge <- calcNormFactors(dge, method = "TMM") #apply scale normalization to RNA-seq read counts using the trimmed mean of M-values (TMM) normalizaton method 
@@ -94,22 +108,10 @@ dge$samples$norm.factors
 ```{r}
 logCPM <- cpm(dge, log=TRUE, prior.count=3) #in the limma-trend approach, counts are converted to log-counts-per-million; prior.count is used here to damp down the variances of logarithms of low counts (i.e., ratio of the largest library size to the smallest is not more than about 3-fold)
 
-#The figure shows the density of logCPM values for pre-filtered and post-filtered count-data
-library(RColorBrewer)
-nsamples <- ncol(dge)
-col <- brewer.pal(nsamples, "Paired")
-lcpm.cutoff <- log2(10/M + 2/L) #defines the logCPM threshold
-par(mar = c(5, 5, 2, 2))
-plotDensities(lcpm, col=col, main="", legend="topright")
-title(main="A.Pre-filtered count-data")
-abline(v=lcpm.cutoff, lty=3)
-plotDensities(logCPM, col=col, main="", legend="topright")
-title(main="B. Filtered count-data")
-
 #The figure shows the expression distribution of samples for un-normalized and normalized count-data
 par(mar = c(2, 5, 2, 10))
-boxplot(lcpm, col=col, main="", xaxt="n", ann=FALSE, xlim=c(0.5, 10.5), ylim = c(0,19))
-title(main="C.Un-normalized count-data", ylab = "logCPM")
+boxplot(lcpm.f, col=col, main="", xaxt="n", ann=FALSE, xlim=c(0.5, 10.5), ylim = c(0,19))
+title(main="A.Un-normalized count-data", ylab = "logCPM")
 axis(1, las = 2, xpd = TRUE, at = NULL, labels = FALSE, tick = FALSE, line = NA)
 mtext("Samples", side = 1, line = 1)
 legend("topright", 
@@ -122,7 +124,7 @@ legend("topright",
        title = "Samples", 
        xpd = TRUE)
 boxplot(logCPM, col=col, main="", xaxt="n", ann=FALSE, xlim=c(0.5, 10.5), ylim = c(0,19))
-title(main="D.Normalized count-data", ylab = "logCPM")
+title(main="B.Normalized count-data", ylab = "logCPM")
 axis(1, las = 2, xpd = TRUE, at = NULL, labels = FALSE, tick = FALSE, line = NA)
 mtext("Samples", side = 1, line = 1)
 legend("topright", 
@@ -150,7 +152,7 @@ v <- voom(dge, design, plot=TRUE) #transform count data to logCPM, estimate the 
 #Fit linear models for comparison of interest
 vfit <- lmFit(v, design) #fit linear model given a series of arrays
 vfit <- contrasts.fit(vfit, contrasts=contr.matrix) #compute contrasts from linear model fit
-efit <- eBayes(vfit) #compute moderated t-statistics, moderated F-statistic, and log-odds of differential expression by empirical Bayes moderation of the standard errors towards a common value
+efit <- eBayes(vfit, trend=TRUE) #compute moderated t-statistics, moderated F-statistic, and log-odds of differential expression by empirical Bayes moderation of the standard errors towards a common value, intensity-dependent trend is fitted to the prior variances
 plotSA(efit, main="Final model: Mean-variance trend")
 
 #Examine the number of differentially expressed (DE) genes with log-fold-changes significantly greater than 1
@@ -159,8 +161,10 @@ tfit <- treat(vfit, lfc=1) #use the treat method to calculate p-values from empi
 #Examine DE genes from smallest to largest adjusted p-value
 topTreat <- topTreat(tfit, coef=1, n=Inf, adjust.method="BH") #table of top genes from a linear model fit, adjust p-Values using the False Discovery Rate (FDR) based Benjamini-Hochberg (BH) method
 topTable <- topTable(efit, coef=1 , n=Inf, adjust.method="BH") #for results from eBayes, adjust p-Values using the BH method
+```
 
 #Using graphical representation of differential expression results 
+```{r}
 library(gplots)
 KO.vs.WT <- topTreat #duplicate data
 miRNAs <- row.names(KO.vs.WT)
