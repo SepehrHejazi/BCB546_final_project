@@ -8,6 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# Warning: for RNA-seq analysis guidelines, please see: http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#heatmap-of-the-count-matrix. Do not copy and paste from this - go to the source. 
 
 # upload the necessary packages: 
 ```{r}
