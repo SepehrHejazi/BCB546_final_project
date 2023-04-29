@@ -185,7 +185,8 @@ eBayes_KO.vs.WT$eBayes_miRNAs <- eBayes_miRNAs #add miRNAs to dataframe
 eBayes_KO.vs.WT.topgenes <- eBayes_KO.vs.WT$eBayes_miRNAs[1:33]
 e <- which(logCPM2$miRNA %in% eBayes_KO.vs.WT.topgenes) #returns the position which satisfies the given condition of the top 33 DE genes from the eBayes method
 
-#The figure shows a heatmap of logCPM values for top 33 genes DE in wild-type vs. AGAT-knockout using the eBayes method
-mycol <- colorpanel(1000, low = "yellow", high = "red") #low to high miRNA expresion is represented by a change of color from yellow to red 
-heatmap.2(logCPM[e,], scale = "row", labRow = logCPM2$miRNA[e], labCol = group, col = mycol, trace = "none", density.info = "none", dendrogram = "column", key = TRUE, symkey = FALSE, keysize = 1.5)
+#The figure shows a heatmap of logCPM values for top DE genes in wild-type vs. AGAT-knockout using the eBayes method
+mycol <- colorpanel(1000, low = "yellow", high = "blue") #low to high miRNA expresion is represented by a change of color from yellow to red 
+par(mar = c(3, 4, 2, 10))
+heatmap.2(logCPM[i,], scale = "row", labRow = logCPM2$miRNA[i], labCol = group, margins = c(8,7), offsetRow = 0.1, offsetCol = 0.1, col = mycol, trace = "none", density.info = "none", dendrogram = "column", key = TRUE, symkey = FALSE, keysize = 1.5, key.title = NULL)
 ```
