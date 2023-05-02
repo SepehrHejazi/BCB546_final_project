@@ -6,8 +6,10 @@ Authors are interested in the AGAT enzyme (L-arginine:glycine amidinotransferase
 ## The aim: 
 Expand the understanding of underlying molecular mechanisms of AGAT and its metabolites in cardiovascular disease. 
 ##The goals: 
-1, Study AGAT-dependent regulation of miRNAs and association to cardiovascular disease
+1. Study AGAT-dependent regulation of miRNAs and association to cardiovascular disease
+
 2. Determine whether AGAT-dependent changes in miRNA expression are related to either creatine or hArg
+
 3. Study miRNA-mRNA interactions in AGAT-deficient mouse model to identify regulatory mechanisms within the cardiac AGAT metabolism
 #  Technical details of your replication of analyses: 
 ## Figure # 2: 
