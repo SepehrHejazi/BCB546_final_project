@@ -1,0 +1,44 @@
+---
+title: "Final_Project_Raw_Data"
+author: "Kimia Noroozi"
+date: "2023-05-03"
+output: html_document
+---
+
+## R Markdown
+```{r pressure, echo=FALSE}
+## convert the fasta file to a data frame
+library(Biostrings)
+r1 <- readDNAStringSet("https://iowastate-my.sharepoint.com/:u:/g/personal/knoroozi_iastate_edu/EYGjQZcUAOhMvBwC2UVZ6eMBHmY14KmwKTysC9j2TgLaWA?e=LM7V5X")
+df <- data.frame(id=names(r1), sequence=as.character(r1),stringsAsFactors = FALSE)
+
+## create a new column for read counts
+df[,'readcount'] <- NA
+
+## count the number of times each miRNA was read in the profile, delete duplicates and also delete miRNAs with read counts less than 10.
+library(dplyr)
+df$readcount <- table(df$sequence)[df$sequence]
+df2 <- df[!duplicated(df$sequence),]
+df3 <- df2[df2$readcount >=10,]
+
+## convert the final data frame to an excel file.
+install.packages("writexl")
+library(writexl)
+write_xlsx(df3,'C:\\Users\\knoroozi\\BCB546\\Final project R\\final_data.xlsx')
+
+## Semi-code for merging the 15 samples together based on their miRNA sequences 
+### Create a list of data frames to merge
+df_list <- list(df1, df2, df3, df4, df5, df6, df7, df8, df9, df10, df11, df12, df13, df14, df15)
+
+### Define the common column to merge on
+Sequences <- "sequence"
+
+### Merge data frames
+
+merged_df <- df_list[[1]]
+for (i in 2:length(df_list)) {
+  merged_df <- Reduce(function(x, y) merge(x, y, by = Sequences), list(merged_df, df_list[[i]]))}
+
+```
+
+
