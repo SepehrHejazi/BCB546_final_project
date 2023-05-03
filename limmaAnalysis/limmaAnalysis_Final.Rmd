@@ -150,6 +150,7 @@ par(mfrow=c(1,2))
 v <- voom(dge, design, plot=TRUE) #transform count data to logCPM, estimate the mean-variance relationship to compute appropriate observational-level weights
 
 #Fit linear models for comparison of interest
+png("")
 vfit <- lmFit(v, design) #fit linear model given a series of arrays
 vfit <- contrasts.fit(vfit, contrasts=contr.matrix) #compute contrasts from linear model fit
 efit <- eBayes(vfit, trend=TRUE) #compute moderated t-statistics, moderated F-statistic, and log-odds of differential expression by empirical Bayes moderation of the standard errors towards a common value, intensity-dependent trend is fitted to the prior variances
@@ -161,29 +162,22 @@ tfit <- treat(vfit, lfc=1) #use the treat method to calculate p-values from empi
 #Examine DE genes from smallest to largest adjusted p-value
 topTreat <- topTreat(tfit, coef=1, n=Inf, adjust.method="BH") #table of top genes from a linear model fit, adjust p-Values using the False Discovery Rate (FDR) based Benjamini-Hochberg (BH) method
 topTable <- topTable(efit, coef=1 , n=Inf, adjust.method="BH") #for results from eBayes, adjust p-Values using the BH method
+
+#After comparing p-values and adjusted p-values for both methods, the eBayes method was chosen for further analysis of differential expression
 ```
 
 #Using graphical representation of differential expression results 
 ```{r}
 library(gplots)
-KO.vs.WT <- topTreat #duplicate data
-miRNAs <- row.names(KO.vs.WT)
-KO.vs.WT$miRNAs <- miRNAs #add miRNAs to dataframe
-KO.vs.WT.topgenes <- KO.vs.WT$miRNAs[1:33] #top 33 DE genes
 
 logCPM2 <- data.frame(logCPM) #duplicate logCPM data and create a dataframe
 logCPM2$miRNA <- row.names(logCPM2) #add miRNAs to dataframe
-i <- which(logCPM2$miRNA %in% KO.vs.WT.topgenes) #returns the position which satisfies the given condition of the top 33 DE genes
-
-#The figure shows a heatmap of logCPM values for top 33 genes DE in wild-type vs. AGAT-knockout
-mycol <- colorpanel(1000, low = "yellow", high = "red") #low to high miRNA expresion is represented by a change of color from yellow to red 
-heatmap.2(logCPM[i,], scale = "row", labRow = logCPM2$miRNA[i], labCol = group, col = mycol, trace = "none", density.info = "none", dendrogram = "column", key = TRUE, symkey = FALSE, keysize = 1.5)
 
 eBayes_KO.vs.WT <- topTable #duplicate data
 eBayes_miRNAs <- row.names(eBayes_KO.vs.WT)
 eBayes_KO.vs.WT$eBayes_miRNAs <- eBayes_miRNAs #add miRNAs to dataframe
-eBayes_KO.vs.WT.topgenes <- eBayes_KO.vs.WT$eBayes_miRNAs[1:33]
-e <- which(logCPM2$miRNA %in% eBayes_KO.vs.WT.topgenes) #returns the position which satisfies the given condition of the top 33 DE genes from the eBayes method
+eBayes_KO.vs.WT.topgenes <- eBayes_KO.vs.WT$eBayes_miRNAs[1:12] #top DE genes with adjusted p-value < 0.05
+i <- which(logCPM2$miRNA %in% eBayes_KO.vs.WT.topgenes) #returns the position which satisfies the given condition of the top DE genes from the eBayes method
 
 #The figure shows a heatmap of logCPM values for top DE genes in wild-type vs. AGAT-knockout using the eBayes method
 mycol <- colorpanel(1000, low = "yellow", high = "blue") #low to high miRNA expresion is represented by a change of color from yellow to red 
