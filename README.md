@@ -2,7 +2,9 @@
 
 ## Raw Data Analysis
 The raw data was first edited using UNIX and the following command for further analysis in R:
-$  sed 's/@/>/g' SRR16039738.fasta > r1.fatsa
+
+$ sed 's/@/>/g' SRR16039738.fasta > r1.fatsa
+
 (The r1.fasta was uploaded to OneDrive and linked in R. The raw SRR16039738.fasta file was not uploaded due to size limitations.)
 
 ## Description of DESeq Analysis: 
