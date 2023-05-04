@@ -12,7 +12,7 @@ The excel file created from the codes in the Raw Data Anlysis R markdown is uplo
 ## Description of DESeq Analysis: 
 Contains an R-markdown file "DESeqAnalysis.Rmd" with code used to re-create Figure 2, and analyze data and re-create supplementary table 2. The re-created heatmap includes "Heatmap_35_top_padj.png", which contains the top 35 DGEs in AGAT -/- compared to Wildtype with padj, and "DESeq_HeatMap_AGAT_control.png", which only includes genes that made it past FDR (13 total, which makes sense for miRs). Re-creation of supplementary table 2, or Significantly regulated miRNAs between wt and AGAT-/- mice, is found in "deficient_control_result". Contains original data "GSE184723_miRNA_read-counts.csv.gz". 
 
-##Description of limma Analysis:
+## Description of limma Analysis:
 Contains an R-markdown file "limmaAnalysis_Final.Rmd" with code used to re-create Figure 2, and analyze data. The re-created heatmap includes "heatmap_DGE_WTvKO.png", which consists of the the top 12 DGEs in AGAT knockout mice compared to wildtype with Benjamini-Hochberg adjusted p-values less than or equal to 0.05. Other plots includes: (1) density plots of logCPM for pre-filtered ("pre-filtered_density plot.png") and filtered ("filtered_density plot.png") data, (2) boxplots of normalized ("Normalized_Count-Data.png") and un-normalized ("Un-normalized_Count-Data.png") count data in logCPM and (3) voom mean-variance trend compared to the empirical Bayes mean-variance trend ("Mean-variance trend.png"). Contains original data "GSE184723_miRNA_read-counts.csv.gz" and table of differential expression analysis for 226 miRNAs using limma and empirical Bayes method ("miRNA_limma_eBayes.csv").
 
 ## Description Fig4_Analysis
