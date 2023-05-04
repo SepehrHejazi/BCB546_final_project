@@ -17,3 +17,6 @@ Contains an R-markdown file "limmaAnalysis_Final.Rmd" with code used to re-creat
 
 ## Description Fig4_Analysis
 Contains R-markdown file "Fig4_DESeq_Plots.Rmd" with code for using DESeq to attempt to recreate the MI part of figure 4 comparing MI to WT at three different time points (Day 1, Week 1, and Week 8). Also the .csv files from analysis and the original data files used "GSE114695_Gene_FC_P-val_FPKM.txt.gz" and "GSE114695_miR_FC_P-val_RPM.txt.gz".
+
+## Description of Jensen_et_al-2022.md file
+This .md file introduces the original paper, explains the technical details of our replication of the analyses and summarizes our replication of the original results.
