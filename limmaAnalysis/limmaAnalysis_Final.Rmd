@@ -163,6 +163,8 @@ tfit <- treat(vfit, lfc=1) #use the treat method to calculate p-values from empi
 topTreat <- topTreat(tfit, coef=1, n=Inf, adjust.method="BH") #table of top genes from a linear model fit, adjust p-Values using the False Discovery Rate (FDR) based Benjamini-Hochberg (BH) method
 topTable <- topTable(efit, coef=1 , n=Inf, adjust.method="BH") #for results from eBayes, adjust p-Values using the BH method
 
+write.csv(topTable, "miRNA_limma_eBayes.csv", row.names=TRUE) #export "topTable" dataframe as a .csv file
+
 #After comparing p-values and adjusted p-values for both methods, the eBayes method was chosen for further analysis of differential expression
 ```
 
